@@ -124,6 +124,7 @@ def prepare_data(config, model, test_run):
         dev_mask = np.zeros(len(dev_data), dtype=bool)
         dev_mask[:500] = True
         dev_data.filter(dev_mask, inplace=True)
+        batch_size = config["batch_size"] = 500
 
     training_fraction = config.get("training_fraction", 1.0)
     apply_training_fraction(training_fraction, train_data)
@@ -196,15 +197,40 @@ if __name__ == "__main__":
 
     torch.manual_seed(42)
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True)
-    parser.add_argument("--test_run", action="store_true")
-    parser.add_argument("--lr", default=None, type=float)
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to configuration file"
+    )
+    parser.add_argument(
+        "--test_run",
+        action="store_true",
+        help="If true, makes a test run with less data and less logging. "
+        "Intended for debug purposes.",
+    )
+    parser.add_argument(
+        "--lr",
+        default=None,
+        type=float,
+        help="Learning rate. If passed from the command line, "
+        "it will override the learning rate in the configuration file",
+    )
+    parser.add_argument(
+        "--fraction",
+        default=None,
+        type=float,
+        help="Fraction of training blocks to use as float between 0 and 1. "
+        "Defaults to 1. If passed from the command line,  it will override "
+        "the learning rate in the configuration file",
+    )
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
         config = json.load(f)
 
     experiment_name = os.path.basename(args.config)[:-5]
+    if args.fraction is not None:
+        logging.warning(f"Overwriting training fraction to {args.fraction}")
+        experiment_name += f"_frac{args.fraction:.3f}"
+        config["training_fraction"] = args.fraction
     if args.lr is not None:
         logging.warning(f"Overwriting learning rate to {args.lr}")
         experiment_name += f"_{args.lr}"

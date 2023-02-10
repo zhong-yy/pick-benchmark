@@ -30,6 +30,7 @@ def traverse_path(path, output, cross=False, resampled=False, baer=False):
     results = []
 
     exp_dirs = [x for x in path.iterdir() if x.is_dir()]
+    exp_dirs.sort()
     for exp_dir in tqdm(exp_dirs):
         itr = exp_dir.iterdir()
         if baer:
@@ -80,6 +81,8 @@ def parse_exp_name(version_dir, cross, resampled, baer):
     parts = exp_name.split("_")
     target = None
     sampling_rate = None
+    # if the folder name contains frac0.xxx, remove frac0.xxx
+    parts = [x for x in parts if "frac" not in x]
     if cross or baer:
         if len(parts) == 4:
             data, model, lr, target = parts
